@@ -325,7 +325,14 @@
                         <!-- Nom de l'article et Prix (en dehors du carrousel) -->
                         <div class="carousel-caption">
                             <h3><?php echo $article['nom_article']; ?></h3>
-                            <p><?php echo $article['prix']; ?> €</p>
+                            <p><?php // Vérifier si le prix promo est différent du prix original
+                                if (isset($article['prix']) && isset($article['prix_promo']) && $article['prix_promo'] !== $article['prix']) {
+                                    echo '<p style="color: red; text-decoration: line-through;">Prix : ' . $article['prix'] . ' €</p>';
+                                    echo '<p>Prix Promo : ' . $article['prix_promo'] . ' €</p>';
+                                } else {
+                                    // Afficher le prix de l'article
+                                    echo '<p>Prix : ' . $article['prix'] . ' €</p>';
+                                } ?> </p>
                         </div>
                     </div>
                 <?php endforeach; ?>

@@ -102,6 +102,7 @@
     <div class="center-wrapper">
         <form action="" method="GET" class="filter-form">
             <input type="hidden" name="page" value="1">
+            <input type="submit" name="categorie" value="Promo">
             <input type="submit" name="categorie" value="Tous les articles">
             <input type="submit" name="categorie" value="Fruit">
             <input type="submit" name="categorie" value="Légume">
@@ -135,10 +136,16 @@
             $whereClause = '';
             if (isset($_GET['categorie'])) {
                 $categorie = strtolower($_GET['categorie']); // Convertir en minuscules
-                if ($categorie !== 'tous les articles') {
+                if ($categorie === 'promo') {
+                    $_SESSION['promo'] = true; // Définir la variable de session "promo" à true
+                } elseif ($categorie !== 'tous les articles') {
                     $whereClause = "WHERE LOWER(mot_cle) = '$categorie'";
                 }
             }
+
+            // Ajouter la condition pour filtrer les articles en promotion avec promo supérieur à 0
+            $promoCondition = isset($_SESSION['promo']) && $_SESSION['promo'] === true ? " AND a.promo > 0" : "";
+
 
             // Pagination
             $articlesParPage = 10; // Nombre d'articles par page
@@ -146,9 +153,22 @@
             $depart = ($pageCourante - 1) * $articlesParPage;
 
             // Requête pour récupérer les données depuis la base de données (résultats paginés)
-            $query = $db->query("SELECT DISTINCT a.* FROM articles_achat a 
-                                 INNER JOIN mot m ON a.id = m.article_id 
-                                 $whereClause LIMIT $depart, $articlesParPage");
+            if (isset($_SESSION['promo']) && $_SESSION['promo'] === true) {
+                // Sélectionner les articles en promotion seulement si la session "promo" est définie à true
+                $query = $db->query("SELECT DISTINCT a.*, (a.prix * (1 - a.promo / 100)) AS prix_promo
+                             FROM articles_achat a 
+                             INNER JOIN mot m ON a.id = m.article_id 
+                             $whereClause $promoCondition LIMIT $depart, $articlesParPage");
+            } else {
+                // Sélectionner tous les articles si la session "promo" n'est pas définie ou est définie à false
+                $query = $db->query("SELECT DISTINCT a.*
+                             FROM articles_achat a 
+                             INNER JOIN mot m ON a.id = m.article_id 
+                             $whereClause LIMIT $depart, $articlesParPage");
+            }
+
+
+
             $donnees = $query->fetchAll(PDO::FETCH_ASSOC);
 
             // Compter le nombre total d'articles pour la pagination
@@ -163,6 +183,7 @@
             die();
         }
 
+
         // Afficher les données récupérées
         foreach ($donnees as $row) {
             echo '<div class="article">';
@@ -176,8 +197,13 @@
                 echo '<p>Nom : ' . $row['nom_article'] . '</p>';
             }
 
-            // Afficher le prix de l'article
-            if (isset($row['prix'])) {
+
+            // Vérifier si le prix promo est différent du prix original
+            if (isset($row['prix']) && isset($row['prix_promo']) && $row['prix_promo'] !== $row['prix']) {
+                echo '<p style="color: red; text-decoration: line-through;">Prix : ' . $row['prix'] . ' €</p>';
+                echo '<p>Prix Promo : ' . $row['prix_promo'] . ' €</p>';
+            } else {
+                // Afficher le prix de l'article
                 echo '<p>Prix : ' . $row['prix'] . ' €</p>';
             }
 

@@ -300,7 +300,10 @@
             <th>Catégorie</th>
             <th>Date d'ajout</th>
             <th>Image</th>
+            <th>Promo</th>
+            <th>Prix promo</th>
             <th>Action</th>
+
         </tr>
         <?php foreach ($donnees as $row) : ?>
             <tr>
@@ -310,6 +313,7 @@
                 <td><?php echo $row['prix']; ?></td>
                 <td><?php echo $row['categorie']; ?></td> <!-- Display the category value -->
                 <td><?php echo $row['date_achat']; ?></td>
+
                 <td>
                     <?php if ($row['image_path']) : ?>
                         <img src="<?php echo $row['image_path']; ?>" alt="<?php echo $row['nom_article']; ?>">
@@ -317,6 +321,8 @@
                         Image non disponible
                     <?php endif; ?>
                 </td>
+                <td><?php echo $row['promo']; ?></td>
+                <td><?php echo $row['prix_promo']; ?></td>
                 <td>
                     <a href="?action=delete&id=<?php echo $row['id']; ?>" onclick="return confirm('Voulez-vous vraiment supprimer cet article ?')">Supprimer</a>
                     <a href="modifier_article.php?id=<?php echo $row['id']; ?>">Modifier</a>

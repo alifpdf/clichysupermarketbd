@@ -55,57 +55,80 @@
         $nom = $_POST["nom"];
         $description = $_POST["description"];
         $prix = $_POST["prix"];
+        $promo = $_POST["promo"];
 
-        // Gérer la mise à jour de l'image s'il y a lieu
-        if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
-            $image_temp = $_FILES["image"]["tmp_name"];
-            $image = "images/" . $_FILES["image"]["name"];
+        // Vérifier si la promo est entre 0 et 100
+        if ($promo < 0 || $promo > 100) {
+            echo '<p class="error-message">La promo doit être entre 0 et 100.</p>';
+        } else {
+            // Gérer la mise à jour de l'image s'il y a lieu
+            if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
+                $image_temp = $_FILES["image"]["tmp_name"];
+                $image = "images/" . $_FILES["image"]["name"];
 
-            if (!is_dir("images")) {
-                mkdir("images");
+                if (!is_dir("images")) {
+                    mkdir("images");
+                }
+
+                move_uploaded_file($image_temp, $image);
+            } else {
+                // Conserver l'ancienne image si aucune nouvelle image n'est chargée
+                $image = $article['image_path'];
             }
 
-            move_uploaded_file($image_temp, $image);
-        } else {
-            // Conserver l'ancienne image si aucune nouvelle image n'est chargée
-            $image = $article['image_path'];
+            // Mettre à jour les informations de l'article dans la base de données
+            $queryUpdate = $db->prepare("UPDATE articles_achat SET nom_article = :nom, description = :description, prix = :prix, promo = :promo, date_achat = NOW(), image_path = :image WHERE id = :id");
+            $queryUpdate->bindParam(":nom", $nom);
+            $queryUpdate->bindParam(":description", $description);
+            $queryUpdate->bindParam(":prix", $prix);
+            $queryUpdate->bindParam(":promo", $promo);
+            $queryUpdate->bindParam(":image", $image);
+            $queryUpdate->bindParam(":id", $idArticle);
+            $queryUpdate->execute();
+
+            // Rediriger vers la page d'affichage des articles après la mise à jour
+            header('Location: magasin.php');
+            exit();
         }
-
-        // Mettre à jour les informations de l'article dans la base de données
-        $queryUpdate = $db->prepare("UPDATE articles_achat SET nom_article = :nom, description = :description, prix = :prix, image_path = :image WHERE id = :id");
-        $queryUpdate->bindParam(":nom", $nom);
-        $queryUpdate->bindParam(":description", $description);
-        $queryUpdate->bindParam(":prix", $prix);
-        $queryUpdate->bindParam(":image", $image);
-        $queryUpdate->bindParam(":id", $idArticle);
-        $queryUpdate->execute();
-
-        // Rediriger vers la page d'affichage des articles après la mise à jour
-        header('Location: magasin.php');
-        exit();
     }
     ?>
 
-    <h1>Modifier l'article</h1>
+    <!DOCTYPE html>
+    <html lang="fr">
 
-    <div class="center-wrapper">
-        <form action="" method="POST" class="ajoutarticle" enctype="multipart/form-data">
-            <label for="nom">Nom:</label>
-            <input type="text" id="nom" name="nom" value="<?php echo $article['nom_article']; ?>" class="textinput" required><br>
+    <head>
+        <title>Modifier un article</title>
+        <style>
+            /* Mettez ici les styles nécessaires pour la page de modification */
+        </style>
+    </head>
 
-            <label for="image">Image :</label>
-            <input type="file" id="image" name="image" accept="image/png, image/jpeg, image/jpg"><br>
+    <body>
+        <h1>Modifier l'article</h1>
 
-            <label for="description" class="space">Description :</label>
-            <textarea id="description" name="description" rows="3" style="width: 100%;" wrap="soft" required><?php echo $article['description']; ?></textarea><br>
+        <div class="center-wrapper">
+            <form action="" method="POST" class="ajoutarticle" enctype="multipart/form-data">
+                <label for="nom">Nom:</label>
+                <input type="text" id="nom" name="nom" value="<?php echo $article['nom_article']; ?>" class="textinput" required><br>
 
-            <label for="prix" class="space">Prix :</label>
-            <input type="number" id="prix" name="prix" min="0" step="0.01" value="<?php echo $article['prix']; ?>" class="textinput" required><br>
+                <label for="image">Image :</label>
+                <input type="file" id="image" name="image" accept="image/png, image/jpeg, image/jpg"><br>
 
-            <input type="submit" value="Enregistrer les modifications">
-        </form>
-    </div>
+                <label for="description" class="space">Description :</label>
+                <textarea id="description" name="description" rows="3" style="width: 100%;" wrap="soft" required><?php echo $article['description']; ?></textarea><br>
 
-</body>
+                <label for="prix" class="space">Prix :</label>
+                <input type="number" id="prix" name="prix" min="0" step="0.01" value="<?php echo $article['prix']; ?>" class="textinput" required><br>
 
-</html>
+                <label for="promo" class="space">Promo (0 - 100) :</label>
+                <input type="number" id="promo" name="promo" min="0" max="100" step="1" value="<?php echo $article['promo']; ?>" class="textinput" required><br>
+
+                <input type="submit" value="Enregistrer les modifications">
+            </form>
+        </div>
+
+    </body>
+
+
+
+    </html>
